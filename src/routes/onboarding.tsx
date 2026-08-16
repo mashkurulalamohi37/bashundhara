@@ -174,18 +174,20 @@ function OnboardingPage() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="sticky top-0 z-20 flex items-center justify-between border-b border-border bg-card px-6 py-3">
-        <Link to="/" className="flex items-center gap-2.5">
-          <span className="grid size-8 place-items-center rounded bg-primary text-sm font-bold text-primary-foreground">BR</span>
+      <header className="sticky top-0 z-20 flex flex-wrap items-center justify-between gap-3 border-b border-border bg-card px-4 py-3 sm:flex-nowrap sm:px-6">
+        <Link to="/" className="flex items-center gap-2.5 shrink-0">
+          <span className="grid size-8 place-items-center rounded bg-primary text-sm font-bold text-primary-foreground shadow-sm">BR</span>
           <span className="hidden text-sm font-semibold sm:block">Bashundhara R/A</span>
         </Link>
-        <StepDots steps={steps} current={step} />
-        <Link to="/login" className="text-xs text-muted-foreground hover:text-foreground">
-          Already have an account? Sign in
+        <div className="order-3 w-full sm:order-2 sm:w-auto overflow-x-auto py-1 flex justify-center">
+          <StepDots steps={steps} current={step} />
+        </div>
+        <Link to="/login" className="order-2 sm:order-3 text-xs font-medium text-muted-foreground hover:text-primary transition-colors shrink-0">
+          Sign in →
         </Link>
       </header>
 
-      <main className="mx-auto max-w-lg px-4 py-12">
+      <main className="mx-auto max-w-lg px-4 py-8 sm:py-12">
         {/* Step: Account */}
         {step === "account" && (
           <div className="space-y-6">
@@ -196,13 +198,13 @@ function OnboardingPage() {
             <div className="space-y-4">
               <div>
                 <Label htmlFor="onb-phone">Mobile Phone number</Label>
-                <div className="relative mt-1.5 flex items-center">
-                  <span className="inline-flex h-10 items-center rounded-l-md border border-r-0 border-input bg-muted px-3 text-xs font-semibold text-muted-foreground">
+                <div className="relative mt-1.5 flex w-full items-center">
+                  <span className="inline-flex h-10 shrink-0 items-center rounded-l-md border border-r-0 border-input bg-muted px-3 text-xs font-semibold text-muted-foreground select-none">
                     🇧🇩 +880
                   </span>
                   <Input
                     id="onb-phone"
-                    className="rounded-l-none pl-3 font-mono"
+                    className="flex-1 min-w-0 rounded-l-none pl-3 font-mono"
                     placeholder="1711-234567"
                     value={phone.replace(/^\+?880/, "")}
                     onChange={(e) => {
@@ -329,7 +331,7 @@ function OnboardingPage() {
                 Selecting a relationship starts the relevant onboarding flow. This does not automatically grant access — verification is required.
               </p>
             </div>
-            <div className="space-y-2">
+            <div className="space-y-2 max-h-[360px] overflow-y-auto pr-1 custom-scrollbar">
               {RELATIONSHIP_OPTIONS.map((r) => (
                 <button
                   key={r.type}
