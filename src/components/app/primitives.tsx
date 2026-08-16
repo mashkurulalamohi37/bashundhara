@@ -54,9 +54,9 @@ export function Section({
   className?: string;
 }) {
   return (
-    <section className={cn("rounded-md border border-border bg-card", className)}>
+    <section className={cn("rounded-xl border border-border bg-card shadow-sm transition-all duration-200 hover:border-primary/30 hover:shadow-md", className)}>
       {title ? (
-        <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
+        <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-3 sm:px-5">
           <div>
             <h2 className="text-sm font-semibold">{title}</h2>
             {description ? <p className="text-xs text-muted-foreground">{description}</p> : null}
@@ -72,12 +72,12 @@ export function Section({
 type Tone = "neutral" | "success" | "warning" | "danger" | "info" | "primary";
 
 const TONE_CLASS: Record<Tone, string> = {
-  neutral: "bg-muted text-muted-foreground border-border",
-  success: "bg-success/12 text-success border-success/30",
-  warning: "bg-warning/15 text-warning-foreground border-warning/40",
-  danger: "bg-destructive/12 text-destructive border-destructive/30",
-  info: "bg-info/12 text-info border-info/30",
-  primary: "bg-primary-soft text-accent-foreground border-primary/25",
+  neutral: "bg-muted text-muted-foreground border-border hover:bg-muted/80",
+  success: "bg-success/12 text-success border-success/30 hover:bg-success/20",
+  warning: "bg-warning/15 text-warning-foreground border-warning/40 hover:bg-warning/25",
+  danger: "bg-destructive/12 text-destructive border-destructive/30 hover:bg-destructive/20",
+  info: "bg-info/12 text-info border-info/30 hover:bg-info/20",
+  primary: "bg-primary-soft text-accent-foreground border-primary/25 hover:bg-primary-soft/80",
 };
 
 const TONE_MAP: Record<string, Tone> = {
@@ -102,7 +102,7 @@ export function StatusBadge({ value, tone }: { value: string; tone?: Tone }) {
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 whitespace-nowrap rounded border px-2 py-0.5 text-xs font-medium capitalize",
+        "inline-flex items-center gap-1.5 whitespace-nowrap rounded border px-2 py-0.5 text-xs font-medium capitalize transition-transform hover:scale-105 cursor-default",
         TONE_CLASS[resolved],
       )}
     >
@@ -128,11 +128,11 @@ export function KpiCard({
   hint?: string;
 }) {
   return (
-    <div className="flex flex-col justify-between gap-3 border border-border bg-card p-4 first:rounded-l-md last:rounded-r-md">
+    <div className="flex flex-col justify-between gap-3 border border-border bg-card p-4 first:rounded-l-md last:rounded-r-md transition-all duration-200 hover:bg-muted/30 hover:border-primary/40">
       <div className="flex items-start justify-between gap-2">
         <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</span>
         {Icon ? (
-          <span className={cn("rounded p-1", TONE_CLASS[tone])}>
+          <span className={cn("rounded p-1 transition-transform hover:scale-110", TONE_CLASS[tone])}>
             <Icon className="size-3.5" />
           </span>
         ) : null}
