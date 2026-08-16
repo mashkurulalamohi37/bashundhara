@@ -6,6 +6,7 @@ import {
   Siren, Sprout, Stethoscope, Trees, Truck, UserCog, Users, Wallet, Wrench,
   BadgeCheck, Boxes, Building, Coins, Gavel, HeartHandshake, KeyRound, Layers, MessageSquare,
   Newspaper, PiggyBank, Plug, ShoppingBag, Sparkles, Store, Tags, Timer, UserSquare2, Zap,
+  FileWarning, BarChart2,
 } from "lucide-react";
 import type { Role } from "@/types";
 

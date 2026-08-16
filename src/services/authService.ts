@@ -52,12 +52,14 @@ export const authService = {
     if (!found) throw new ApiError(404, "No account found for this phone or email.");
     if (found.password !== password) throw new ApiError(401, "Incorrect password. Please try again.");
     const { password: _pw, ...user } = found;
-    return request("/auth/login", user, 500);
+    const res: any = await request("/auth/login", { identifier, password }, 300);
+    return res.user ?? user;
   },
-  loginAs(role: Role): Promise<AppUser> {
-    const found = ACCOUNTS.find((a) => a.role === role)!;
-    const { password: _pw, ...user } = found;
-    return request("/auth/login", user, 300);
+  async loginAs(role: Role): Promise<AppUser> {
+    const found = ACCOUNTS.find((a) => a.role === role);
+    const fallbackUser = found ? (({ password: _pw, ...u }) => u)(found) : ACCOUNTS[0];
+    const res: any = await request("/auth/login-as", { role }, 200);
+    return res.user ?? fallbackUser;
   },
   /** Placeholder — real OTP delivery is handled by the backend SMS provider. */
   requestOtp: (phone: string) => request("/auth/otp", { phone, sent: true, ttl: 120 }, 600),
