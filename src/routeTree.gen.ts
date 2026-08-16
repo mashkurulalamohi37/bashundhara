@@ -13,7 +13,6 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteImport } from './routes/_admin'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
-import { Route as PropertyClaimsRouteImport } from './routes/property-claims'
 import { Route as ResidentRouteImport } from './routes/resident'
 import { Route as AdminAccountsRouteImport } from './routes/_admin.accounts'
 import { Route as AdminAnalyticsRouteImport } from './routes/_admin.analytics'
@@ -52,6 +51,7 @@ import { Route as AdminOwnersRouteImport } from './routes/_admin.owners'
 import { Route as AdminParkingRouteImport } from './routes/_admin.parking'
 import { Route as AdminProfileRouteImport } from './routes/_admin.profile'
 import { Route as AdminPropertiesRouteImport } from './routes/_admin.properties'
+import { Route as AdminPropertyClaimsRouteImport } from './routes/_admin.property-claims'
 import { Route as AdminReportsRouteImport } from './routes/_admin.reports'
 import { Route as AdminResidentsRouteImport } from './routes/_admin.residents'
 import { Route as AdminSecurityRouteImport } from './routes/_admin.security'
@@ -252,11 +252,6 @@ const OnboardingRoute = OnboardingRouteImport.update({
   path: '/onboarding',
   getParentRoute: () => rootRouteImport,
 } as any)
-const PropertyClaimsRoute = PropertyClaimsRouteImport.update({
-  id: '/property-claims',
-  path: '/property-claims',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ResidentRoute = ResidentRouteImport.update({
   id: '/resident',
   path: '/resident',
@@ -446,6 +441,11 @@ const AdminProfileRoute = AdminProfileRouteImport.update({
 const AdminPropertiesRoute = AdminPropertiesRouteImport.update({
   id: '/properties',
   path: '/properties',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminPropertyClaimsRoute = AdminPropertyClaimsRouteImport.update({
+  id: '/property-claims',
+  path: '/property-claims',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminReportsRoute = AdminReportsRouteImport.update({
@@ -1393,7 +1393,6 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
-  '/property-claims': typeof PropertyClaimsRoute
   '/resident': typeof ResidentRouteWithChildren
   '/accounts': typeof AdminAccountsRouteWithChildren
   '/analytics': typeof AdminAnalyticsRoute
@@ -1432,6 +1431,7 @@ export interface FileRoutesByFullPath {
   '/parking': typeof AdminParkingRoute
   '/profile': typeof AdminProfileRoute
   '/properties': typeof AdminPropertiesRoute
+  '/property-claims': typeof AdminPropertyClaimsRoute
   '/reports': typeof AdminReportsRoute
   '/residents': typeof AdminResidentsRouteWithChildren
   '/security': typeof AdminSecurityRouteWithChildren
@@ -1617,7 +1617,6 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
-  '/property-claims': typeof PropertyClaimsRoute
   '/resident': typeof ResidentRouteWithChildren
   '/analytics': typeof AdminAnalyticsRoute
   '/announcements': typeof AdminAnnouncementsRoute
@@ -1652,6 +1651,7 @@ export interface FileRoutesByTo {
   '/parking': typeof AdminParkingRoute
   '/profile': typeof AdminProfileRoute
   '/properties': typeof AdminPropertiesRoute
+  '/property-claims': typeof AdminPropertyClaimsRoute
   '/reports': typeof AdminReportsRoute
   '/residents': typeof AdminResidentsRouteWithChildren
   '/security': typeof AdminSecurityRouteWithChildren
@@ -1839,7 +1839,6 @@ export interface FileRoutesById {
   '/_admin': typeof AdminRouteWithChildren
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
-  '/property-claims': typeof PropertyClaimsRoute
   '/resident': typeof ResidentRouteWithChildren
   '/_admin/accounts': typeof AdminAccountsRouteWithChildren
   '/_admin/analytics': typeof AdminAnalyticsRoute
@@ -1878,6 +1877,7 @@ export interface FileRoutesById {
   '/_admin/parking': typeof AdminParkingRoute
   '/_admin/profile': typeof AdminProfileRoute
   '/_admin/properties': typeof AdminPropertiesRoute
+  '/_admin/property-claims': typeof AdminPropertyClaimsRoute
   '/_admin/reports': typeof AdminReportsRoute
   '/_admin/residents': typeof AdminResidentsRouteWithChildren
   '/_admin/security': typeof AdminSecurityRouteWithChildren
@@ -2065,7 +2065,6 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/onboarding'
-    | '/property-claims'
     | '/resident'
     | '/accounts'
     | '/analytics'
@@ -2104,6 +2103,7 @@ export interface FileRouteTypes {
     | '/parking'
     | '/profile'
     | '/properties'
+    | '/property-claims'
     | '/reports'
     | '/residents'
     | '/security'
@@ -2289,7 +2289,6 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/onboarding'
-    | '/property-claims'
     | '/resident'
     | '/analytics'
     | '/announcements'
@@ -2324,6 +2323,7 @@ export interface FileRouteTypes {
     | '/parking'
     | '/profile'
     | '/properties'
+    | '/property-claims'
     | '/reports'
     | '/residents'
     | '/security'
@@ -2510,7 +2510,6 @@ export interface FileRouteTypes {
     | '/_admin'
     | '/login'
     | '/onboarding'
-    | '/property-claims'
     | '/resident'
     | '/_admin/accounts'
     | '/_admin/analytics'
@@ -2549,6 +2548,7 @@ export interface FileRouteTypes {
     | '/_admin/parking'
     | '/_admin/profile'
     | '/_admin/properties'
+    | '/_admin/property-claims'
     | '/_admin/reports'
     | '/_admin/residents'
     | '/_admin/security'
@@ -2736,7 +2736,6 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRouteWithChildren
   LoginRoute: typeof LoginRoute
   OnboardingRoute: typeof OnboardingRoute
-  PropertyClaimsRoute: typeof PropertyClaimsRoute
   ResidentRoute: typeof ResidentRouteWithChildren
 }
 
@@ -2768,13 +2767,6 @@ declare module '@tanstack/react-router' {
       path: '/onboarding'
       fullPath: '/onboarding'
       preLoaderRoute: typeof OnboardingRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/property-claims': {
-      id: '/property-claims'
-      path: '/property-claims'
-      fullPath: '/property-claims'
-      preLoaderRoute: typeof PropertyClaimsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/resident': {
@@ -3041,6 +3033,13 @@ declare module '@tanstack/react-router' {
       path: '/properties'
       fullPath: '/properties'
       preLoaderRoute: typeof AdminPropertiesRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/_admin/property-claims': {
+      id: '/_admin/property-claims'
+      path: '/property-claims'
+      fullPath: '/property-claims'
+      preLoaderRoute: typeof AdminPropertyClaimsRouteImport
       parentRoute: typeof AdminRoute
     }
     '/_admin/reports': {
@@ -4597,6 +4596,7 @@ interface AdminRouteChildren {
   AdminParkingRoute: typeof AdminParkingRoute
   AdminProfileRoute: typeof AdminProfileRoute
   AdminPropertiesRoute: typeof AdminPropertiesRoute
+  AdminPropertyClaimsRoute: typeof AdminPropertyClaimsRoute
   AdminReportsRoute: typeof AdminReportsRoute
   AdminResidentsRoute: typeof AdminResidentsRouteWithChildren
   AdminSecurityRoute: typeof AdminSecurityRouteWithChildren
@@ -4719,6 +4719,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminParkingRoute: AdminParkingRoute,
   AdminProfileRoute: AdminProfileRoute,
   AdminPropertiesRoute: AdminPropertiesRoute,
+  AdminPropertyClaimsRoute: AdminPropertyClaimsRoute,
   AdminReportsRoute: AdminReportsRoute,
   AdminResidentsRoute: AdminResidentsRouteWithChildren,
   AdminSecurityRoute: AdminSecurityRouteWithChildren,
@@ -4853,7 +4854,6 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRouteWithChildren,
   LoginRoute: LoginRoute,
   OnboardingRoute: OnboardingRoute,
-  PropertyClaimsRoute: PropertyClaimsRoute,
   ResidentRoute: ResidentRouteWithChildren,
 }
 export const routeTree = rootRouteImport
