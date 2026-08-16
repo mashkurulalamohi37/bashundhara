@@ -124,10 +124,10 @@ export function DataTable<T extends { id: string } & Record<string, any>>({
   };
 
   return (
-    <div className="rounded-md border border-border bg-card">
-      <div className="flex flex-wrap items-center gap-2 border-b border-border p-3">
-        <div className="relative min-w-[200px] flex-1">
-          <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+    <div className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden transition-all">
+      <div className="flex flex-wrap items-center gap-2.5 border-b border-border/80 bg-muted/10 p-3.5">
+        <div className="relative min-w-[220px] flex-1">
+          <Search className="pointer-events-none absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
           <Input
             value={search}
             onChange={(e) => {
@@ -136,8 +136,20 @@ export function DataTable<T extends { id: string } & Record<string, any>>({
             }}
             placeholder={searchPlaceholder}
             aria-label="Search records"
-            className="h-9 pl-8"
+            className="h-9 pl-9 text-xs rounded-xl bg-background"
           />
+          {search && (
+            <button
+              type="button"
+              onClick={() => {
+                setSearch("");
+                setPage(1);
+              }}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground hover:text-foreground"
+            >
+              ✕
+            </button>
+          )}
         </div>
         {filters.map((f) => (
           <Select
@@ -148,13 +160,13 @@ export function DataTable<T extends { id: string } & Record<string, any>>({
               setPage(1);
             }}
           >
-            <SelectTrigger className="h-9 w-[150px]" aria-label={f.label}>
+            <SelectTrigger className="h-9 w-[150px] text-xs rounded-xl bg-background font-medium" aria-label={f.label}>
               <SelectValue placeholder={f.label} />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All {f.label.toLowerCase()}</SelectItem>
               {f.options.map((o) => (
-                <SelectItem key={o} value={o} className="capitalize">
+                <SelectItem key={o} value={o} className="capitalize text-xs">
                   {o.replace(/_/g, " ")}
                 </SelectItem>
               ))}
@@ -165,24 +177,26 @@ export function DataTable<T extends { id: string } & Record<string, any>>({
           <Button
             variant="ghost"
             size="sm"
+            className="h-9 text-xs font-semibold text-muted-foreground hover:text-foreground"
             onClick={() => {
               setSearch("");
               setActive({});
+              setPage(1);
             }}
           >
-            <X className="size-3.5" /> Clear
+            <X className="size-3.5 mr-1" /> Clear
           </Button>
         ) : null}
         <div className="ml-auto flex items-center gap-2">
           {toolbarExtra}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm">
-                <Columns3 className="size-3.5" /> Columns
+              <Button variant="outline" size="sm" className="h-9 text-xs font-semibold rounded-xl">
+                <Columns3 className="size-3.5 mr-1" /> Columns
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Visible columns</DropdownMenuLabel>
+              <DropdownMenuLabel className="text-xs">Visible columns</DropdownMenuLabel>
               <DropdownMenuSeparator />
               {columns.map((c) => (
                 <DropdownMenuCheckboxItem
@@ -191,26 +205,28 @@ export function DataTable<T extends { id: string } & Record<string, any>>({
                   onCheckedChange={(checked) =>
                     setHidden((h) => (checked ? h.filter((k) => k !== c.key) : [...h, c.key]))
                   }
+                  className="text-xs"
                 >
                   {c.header}
                 </DropdownMenuCheckboxItem>
               ))}
             </DropdownMenuContent>
           </DropdownMenu>
-          <Button variant="outline" size="sm" onClick={handleExport}>
-            <Download className="size-3.5" /> Export
+          <Button variant="outline" size="sm" className="h-9 text-xs font-semibold rounded-xl" onClick={handleExport}>
+            <Download className="size-3.5 mr-1" /> Export CSV
           </Button>
         </div>
       </div>
 
       {selected.length > 0 && bulkActions.length > 0 ? (
-        <div className="flex flex-wrap items-center gap-2 border-b border-border bg-accent/40 px-3 py-2 text-sm">
-          <span className="font-medium">{selected.length} selected</span>
+        <div className="flex flex-wrap items-center gap-2 border-b border-border bg-accent/40 px-4 py-2.5 text-xs">
+          <span className="font-semibold">{selected.length} selected</span>
           {bulkActions.map((b) => (
             <Button
               key={b.label}
               size="sm"
               variant="outline"
+              className="h-7 text-xs font-semibold"
               onClick={() => {
                 b.onSelect(selected);
                 setSelected([]);
@@ -223,16 +239,22 @@ export function DataTable<T extends { id: string } & Record<string, any>>({
       ) : null}
 
       {loading ? (
-        <TableSkeleton cols={visibleCols.length} />
+        <div className="p-4">
+          <TableSkeleton cols={visibleCols.length} />
+        </div>
       ) : error ? (
-        <ErrorState message={error} onRetry={onRetry} />
+        <div className="p-4">
+          <ErrorState message={error} onRetry={onRetry} />
+        </div>
       ) : pageRows.length === 0 ? (
-        <EmptyState title={emptyTitle} description={emptyDescription} />
+        <div className="p-8">
+          <EmptyState title={emptyTitle} description={emptyDescription} />
+        </div>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[640px] border-collapse text-sm">
+        <div className="overflow-x-auto custom-scrollbar">
+          <table className="w-full min-w-[640px] border-collapse text-xs">
             <thead>
-              <tr className="border-b border-border bg-muted/50 text-left">
+              <tr className="border-b border-border bg-muted/40 text-left text-muted-foreground uppercase tracking-wider text-[10px] font-semibold">
                 {bulkActions.length > 0 ? (
                   <th scope="col" className="w-10 px-3 py-2">
                     <Checkbox
