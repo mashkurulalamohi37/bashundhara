@@ -81,6 +81,17 @@ function RequestCard({ request, tasks, onSelect }: {
   const doneTasks = myTasks.filter((t) => t.status === "completed").length;
   const elapsed = Math.round((Date.now() - new Date(request.createdAt).getTime()) / 60000);
   const overSla = elapsed > request.slaMinutes;
+  const isEmergency = request.priority === "urgent" || request.type === "emergency";
+
+  function handleQuickAdvance(e: React.MouseEvent) {
+    e.stopPropagation();
+    const transitions = STATUS_TRANSITIONS[request.status] ?? [];
+    if (transitions.length > 0) {
+      const nextStatus = transitions[0];
+      opsStore.setRequestStatus(request.id, nextStatus);
+      toast.success(`Moved to ${nextStatus.replace(/_/g, " ")}`);
+    }
+  }
 
   return (
     <div
@@ -89,53 +100,66 @@ function RequestCard({ request, tasks, onSelect }: {
       onClick={onSelect}
       onKeyDown={(e) => e.key === "Enter" && onSelect()}
       className={cn(
-        "group cursor-pointer rounded-lg border border-border bg-card p-3 text-left transition-all hover:border-primary/50 hover:shadow-sm",
-        request.status === "escalated" && "border-red-300 bg-red-50/50 dark:bg-red-950/20",
-        request.status === "emergency" && "border-red-500 bg-red-100/50",
+        "group relative cursor-pointer rounded-xl border bg-card p-3.5 text-left transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md",
+        isEmergency
+          ? "border-red-500/60 bg-red-500/5 shadow-sm shadow-red-500/10 hover:border-red-500"
+          : request.status === "escalated"
+          ? "border-red-400 bg-red-50/60 dark:bg-red-950/30"
+          : "border-border hover:border-primary/50",
       )}
     >
       <div className="flex items-start justify-between gap-2">
-        <div className="flex items-start gap-2 min-w-0">
-          <Icon className={cn("mt-0.5 size-3.5 shrink-0", request.status === "escalated" ? "text-red-500" : "text-primary")} />
+        <div className="flex items-start gap-2.5 min-w-0">
+          <span className={cn(
+            "grid size-7 shrink-0 place-items-center rounded-lg text-xs",
+            isEmergency ? "bg-red-500 text-white animate-pulse" : "bg-primary/10 text-primary"
+          )}>
+            <Icon className="size-3.5" />
+          </span>
           <div className="min-w-0">
-            <p className="truncate text-xs font-medium">{request.title}</p>
-            <p className="mt-0.5 text-[10px] text-muted-foreground">
+            <p className="truncate text-xs font-semibold text-foreground group-hover:text-primary transition-colors">{request.title}</p>
+            <p className="mt-0.5 text-[11px] text-muted-foreground truncate">
               {request.requesterName} · Flat {request.flatId}
             </p>
           </div>
         </div>
-        <span className={cn("shrink-0 rounded border px-1.5 py-0.5 text-[9px] font-semibold uppercase", PRIORITY_COLOR[request.priority])}>
+        <span className={cn("shrink-0 rounded-full border px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider", PRIORITY_COLOR[request.priority])}>
           {request.priority}
         </span>
       </div>
 
       {request.assigneeName && (
-        <p className="mt-1.5 text-[10px] text-muted-foreground">
-          <User className="inline size-3 mr-0.5" />
-          {request.assigneeName}
-        </p>
+        <div className="mt-2 flex items-center gap-1 text-[11px] text-muted-foreground bg-muted/40 rounded px-2 py-1">
+          <User className="size-3 text-muted-foreground" />
+          <span className="truncate">{request.assigneeName}</span>
+        </div>
       )}
 
-      <div className="mt-2 flex items-center justify-between gap-1">
+      {/* SLA & Task Progress Bar */}
+      <div className="mt-2.5 flex items-center justify-between gap-1 border-t border-border/60 pt-2 text-[10px]">
         <div className="flex items-center gap-1">
-          <Timer className={cn("size-3", overSla ? "text-red-500" : "text-muted-foreground")} />
-          <span className={cn("text-[10px]", overSla ? "text-red-600 font-semibold" : "text-muted-foreground")}>
+          <Timer className={cn("size-3", overSla ? "text-red-500 animate-pulse" : "text-muted-foreground")} />
+          <span className={cn("font-medium", overSla ? "text-red-600 font-bold" : "text-muted-foreground")}>
             {elapsed}m {overSla ? "(SLA breached)" : `/ ${request.slaMinutes}m`}
           </span>
         </div>
         {myTasks.length > 0 && (
-          <span className="text-[10px] text-muted-foreground">
+          <span className="font-medium text-muted-foreground">
             {doneTasks}/{myTasks.length} tasks
           </span>
         )}
       </div>
 
-      {myTasks.length > 0 && (
-        <div className="mt-1.5 h-1 rounded-full bg-muted overflow-hidden">
-          <div
-            className={cn("h-full rounded-full transition-all", doneTasks === myTasks.length ? "bg-emerald-500" : "bg-primary")}
-            style={{ width: `${(doneTasks / myTasks.length) * 100}%` }}
-          />
+      {/* Quick Move Button on Hover */}
+      {request.status !== "completed" && (
+        <div className="mt-2 pt-1 flex justify-end opacity-90 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+          <button
+            type="button"
+            onClick={handleQuickAdvance}
+            className="inline-flex items-center gap-1 rounded bg-primary/10 hover:bg-primary hover:text-primary-foreground px-2 py-1 text-[10px] font-semibold text-primary transition-colors"
+          >
+            Advance <ArrowRight className="size-2.5" />
+          </button>
         </div>
       )}
     </div>
@@ -329,13 +353,15 @@ function OpsBoard() {
   const store = useSyncExternalStore(subscribe, getSnapshot);
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<RequestType | "all">("all");
+  const [statusView, setStatusView] = useState<RequestStatus | "all">("all");
   const [selected, setSelected] = useState<OpsRequest | null>(null);
   const [showCompleted, setShowCompleted] = useState(false);
   const [lastRefresh, setLastRefresh] = useState(new Date());
 
   const filtered = store.requests.filter((r) => {
     if (typeFilter !== "all" && r.type !== typeFilter) return false;
-    if (!showCompleted && r.status === "completed") return false;
+    if (statusView !== "all" && r.status !== statusView) return false;
+    if (!showCompleted && statusView === "all" && r.status === "completed") return false;
     if (search) {
       const q = search.toLowerCase();
       return (
@@ -348,97 +374,133 @@ function OpsBoard() {
     return true;
   });
 
-  const activeStatuses = showCompleted ? STATUS_COLS : STATUS_COLS.filter((s) => s.status !== "completed");
+  const activeStatuses = statusView !== "all"
+    ? STATUS_COLS.filter((s) => s.status === statusView)
+    : showCompleted
+    ? STATUS_COLS
+    : STATUS_COLS.filter((s) => s.status !== "completed");
 
   // KPI calculations
   const total = store.requests.length;
   const urgent = store.requests.filter((r) => r.priority === "urgent" || r.priority === "high").length;
   const escalated = store.requests.filter((r) => r.status === "escalated").length;
+  const inProgress = store.requests.filter((r) => r.status === "in_progress").length;
   const completed = store.requests.filter((r) => r.status === "completed").length;
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden">
-      {/* Top bar */}
-      <div className="shrink-0 border-b border-border bg-card px-4 py-3">
+    <div className="flex h-screen flex-col overflow-hidden bg-muted/10">
+      {/* Top Bar */}
+      <div className="shrink-0 border-b border-border bg-card px-4 py-3 sm:px-6 shadow-sm">
         <div className="flex items-center justify-between gap-3 flex-wrap">
           <div className="flex items-center gap-3">
             <div>
               <h1 className="text-base font-bold flex items-center gap-2">
-                <Activity className="size-4 text-primary" />
-                Live Ops Board
+                <span className="grid size-7 place-items-center rounded-lg bg-primary/10 text-primary">
+                  <Activity className="size-4" />
+                </span>
+                Live Operations Board
               </h1>
-              <p className="text-xs text-muted-foreground">
-                {total} requests · {escalated > 0 ? <span className="text-red-500 font-medium">{escalated} escalated · </span> : null}
-                last refresh {lastRefresh.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                Real-time dispatch · {total} requests active · {escalated > 0 ? <span className="text-red-500 font-semibold">{escalated} escalated</span> : "SLA monitored"}
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+
+          <div className="flex items-center gap-2 flex-wrap">
             <div className="relative">
-              <Search className="absolute left-2.5 top-2 size-3.5 text-muted-foreground" />
+              <Search className="absolute left-2.5 top-2.5 size-3.5 text-muted-foreground" />
               <Input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search requests…"
-                className="h-8 pl-8 text-xs w-52"
+                placeholder="Search requests, flats, names…"
+                className="h-8 pl-8 text-xs w-48 sm:w-60"
               />
+              {search && (
+                <button
+                  type="button"
+                  onClick={() => setSearch("")}
+                  className="absolute right-2 top-2 text-xs text-muted-foreground hover:text-foreground"
+                >
+                  ✕
+                </button>
+              )}
             </div>
+
             <select
               value={typeFilter}
               onChange={(e) => setTypeFilter(e.target.value as RequestType | "all")}
-              className="h-8 rounded-md border border-border bg-background px-2 text-xs"
+              className="h-8 rounded-lg border border-border bg-background px-2.5 text-xs font-medium"
             >
-              <option value="all">All types</option>
-              <option value="service">Service</option>
-              <option value="visitor">Visitor</option>
-              <option value="maintenance">Maintenance</option>
-              <option value="package">Package</option>
-              <option value="caretaker">Caretaker</option>
-              <option value="emergency">Emergency</option>
-              <option value="delivery">Delivery</option>
+              <option value="all">All Request Types</option>
+              <option value="emergency">🚨 Emergency</option>
+              <option value="maintenance">🔧 Maintenance</option>
+              <option value="visitor">👤 Visitor Pass</option>
+              <option value="service">📦 Service Delivery</option>
+              <option value="caretaker">🛠️ Caretaker</option>
             </select>
+
             <Button
               size="sm"
               variant="outline"
-              className="h-8 text-xs gap-1"
+              className={cn("h-8 text-xs gap-1.5", showCompleted && "bg-primary/10 text-primary border-primary/40")}
               onClick={() => setShowCompleted(!showCompleted)}
             >
               {showCompleted ? <ChevronUp className="size-3" /> : <ChevronDown className="size-3" />}
-              {showCompleted ? "Hide" : "Show"} completed
+              {showCompleted ? "Hide Completed" : "Show Completed"}
             </Button>
+
             <Button
               size="icon"
               variant="ghost"
               className="h-8 w-8"
-              onClick={() => setLastRefresh(new Date())}
-              title="Refresh"
+              onClick={() => {
+                setLastRefresh(new Date());
+                toast.success("Board refreshed");
+              }}
+              title="Refresh Board"
             >
               <RefreshCw className="size-3.5" />
             </Button>
           </div>
         </div>
 
-        {/* Mini KPIs */}
-        <div className="mt-2 flex items-center gap-4 text-xs">
+        {/* Quick View Status Filter Chips */}
+        <div className="mt-3 flex items-center gap-2 overflow-x-auto pb-1 text-xs custom-scrollbar">
           {[
-            { label: "Total", value: total, color: "text-foreground" },
-            { label: "Urgent/High", value: urgent, color: "text-orange-600" },
-            { label: "Escalated", value: escalated, color: "text-red-600" },
-            { label: "Completed", value: completed, color: "text-emerald-600" },
-          ].map(({ label, value, color }) => (
-            <div key={label} className="flex items-center gap-1">
-              <span className="text-muted-foreground">{label}:</span>
-              <span className={cn("font-semibold tabular-nums", color)}>{value}</span>
-            </div>
+            { id: "all", label: "All Columns", count: total, color: "text-foreground" },
+            { id: "new", label: "New", count: store.requests.filter(r => r.status === "new").length, color: "text-blue-600" },
+            { id: "in_progress", label: "In Progress", count: inProgress, color: "text-amber-600" },
+            { id: "escalated", label: "🚨 Escalated", count: escalated, color: "text-red-600" },
+            { id: "completed", label: "Completed", count: completed, color: "text-emerald-600" },
+          ].map((chip) => (
+            <button
+              key={chip.id}
+              type="button"
+              onClick={() => setStatusView(chip.id as any)}
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-semibold transition-all shrink-0",
+                statusView === chip.id
+                  ? "border-primary bg-primary text-primary-foreground shadow-sm"
+                  : "border-border bg-card text-muted-foreground hover:border-primary/40 hover:text-foreground",
+              )}
+            >
+              <span>{chip.label}</span>
+              <span className={cn(
+                "rounded-full px-1.5 py-0.2 text-[10px] font-bold",
+                statusView === chip.id ? "bg-white/20 text-white" : "bg-muted text-muted-foreground"
+              )}>
+                {chip.count}
+              </span>
+            </button>
           ))}
         </div>
       </div>
 
       {/* Empty Search / Filter Alert */}
-      {filtered.length === 0 && (search || typeFilter !== "all") && (
-        <div className="mx-6 my-4 flex items-center justify-between rounded-xl border border-dashed border-border bg-muted/30 p-4 text-xs">
+      {filtered.length === 0 && (search || typeFilter !== "all" || statusView !== "all") && (
+        <div className="mx-6 my-4 flex items-center justify-between rounded-xl border border-dashed border-border bg-card p-4 text-xs shadow-sm">
           <span className="text-muted-foreground">
-            No requests found matching <strong>"{search}"</strong> {typeFilter !== "all" ? `in type ${typeFilter}` : ""}.
+            No requests found matching your current filter criteria.
           </span>
           <Button
             size="sm"
@@ -447,6 +509,7 @@ function OpsBoard() {
             onClick={() => {
               setSearch("");
               setTypeFilter("all");
+              setStatusView("all");
             }}
           >
             Reset Filters
@@ -454,30 +517,37 @@ function OpsBoard() {
         </div>
       )}
 
-      {/* Kanban columns */}
-      <div className="flex-1 overflow-x-auto overflow-y-hidden">
-        <div className="flex h-full gap-px bg-muted min-w-max">
+      {/* Kanban Columns Canvas */}
+      <div className="flex-1 overflow-x-auto overflow-y-hidden p-4 custom-scrollbar">
+        <div className="flex h-full gap-3 min-w-max pb-2">
           {activeStatuses.map((col) => {
             const colRequests = filtered.filter((r) => r.status === col.status);
             return (
-              <div key={col.status} className={cn("flex w-72 shrink-0 flex-col", col.color)}>
-                {/* Column header */}
-                <div className="flex items-center justify-between px-3 py-2">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-xs font-semibold">{col.label}</span>
-                    <span className={cn(
-                      "rounded-full px-1.5 py-0.5 text-[10px] font-bold tabular-nums",
-                      col.status === "escalated" ? "bg-red-100 text-red-700" : "bg-muted-foreground/10 text-muted-foreground",
-                    )}>
-                      {colRequests.length}
-                    </span>
+              <div
+                key={col.status}
+                className="flex w-64 sm:w-72 shrink-0 flex-col rounded-2xl border border-border/80 bg-card/60 backdrop-blur-sm shadow-sm overflow-hidden"
+              >
+                {/* Column Header */}
+                <div className={cn("flex items-center justify-between border-b border-border/70 px-3.5 py-2.5", col.color)}>
+                  <div className="flex items-center gap-2">
+                    <span className="size-2 rounded-full bg-primary" />
+                    <span className="text-xs font-bold uppercase tracking-wider">{col.label}</span>
                   </div>
+                  <span className={cn(
+                    "rounded-full px-2 py-0.5 text-[10px] font-bold tabular-nums",
+                    col.status === "escalated" ? "bg-red-500 text-white" : "bg-muted text-muted-foreground",
+                  )}>
+                    {colRequests.length}
+                  </span>
                 </div>
 
-                {/* Cards */}
-                <div className="flex-1 space-y-2 overflow-y-auto px-3 pb-3">
+                {/* Card Stream */}
+                <div className="flex-1 space-y-2.5 overflow-y-auto p-3 custom-scrollbar">
                   {colRequests.length === 0 ? (
-                    <div className="mt-4 text-center text-xs text-muted-foreground/50">Empty</div>
+                    <div className="mt-8 flex flex-col items-center justify-center text-center text-muted-foreground/40 text-xs py-4">
+                      <CheckCircle2 className="size-6 mb-1 text-muted-foreground/30" />
+                      No {col.label.toLowerCase()} requests
+                    </div>
                   ) : (
                     colRequests.map((req) => (
                       <RequestCard
