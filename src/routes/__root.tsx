@@ -13,7 +13,6 @@ import appCss from "../styles.css?url";
 import { AuthProvider } from "@/hooks/useAuth";
 import { I18nProvider } from "@/i18n";
 import { Toaster } from "@/components/ui/sonner";
-import { CustomCursor } from "@/components/app/custom-cursor";
 
 function NotFoundComponent() {
   return (
@@ -135,7 +134,6 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <I18nProvider>
         <AuthProvider>
-          <CustomCursor />
           {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
           <Outlet />
           <Toaster position="top-right" richColors closeButton />
