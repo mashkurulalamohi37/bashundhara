@@ -204,9 +204,9 @@ export const caretakerService = {
     if (task) {
       if (action === "accept") {
         task.status = "accepted" as any;
-      } else if (action === "collect" || action === "handover") {
+      } else if (action === "collect") {
         task.status = "in_progress" as any;
-      } else if (action === "deliver" || action === "complete") {
+      } else if (action === "handover" || action === "deliver" || action === "complete") {
         task.status = "completed" as any;
       }
     }

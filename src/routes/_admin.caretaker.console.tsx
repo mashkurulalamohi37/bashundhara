@@ -5,10 +5,12 @@ import { toast } from "sonner";
 import {
   Camera, CheckCircle2, ClipboardList, MapPin, PackageCheck, QrCode, Truck,
   Sparkles, Check, KeyRound, Loader2, ArrowRight, ShieldCheck,
+  Building, UserCheck, ArrowRightLeft,
 } from "lucide-react";
 import { PageHeader, Section, KpiCard, StatusBadge, TableSkeleton } from "@/components/app/primitives";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { caretakerService, caretakerTaskService } from "@/services";
 import { humanizeError } from "@/services/api";
@@ -43,6 +45,9 @@ function CaretakerConsole() {
   const [otpTask, setOtpTask] = useState<string | null>(null);
   const [scanningTask, setScanningTask] = useState<string | null>(null);
   const [photoTask, setPhotoTask] = useState<string | null>(null);
+  const [handoverTask, setHandoverTask] = useState<any | null>(null);
+  const [handoverGate, setHandoverGate] = useState("Gate 3 (Central North)");
+  const [handoverNotes, setHandoverNotes] = useState("Items verified intact and sealed");
 
   const { data: summary } = useQuery({ queryKey: ["caretaker-summary"], queryFn: () => caretakerService.summary() });
   const { data: tasks = [], isLoading } = useQuery({ queryKey: ["caretaker-tasks"], queryFn: () => caretakerTaskService.all() });
@@ -52,6 +57,7 @@ function CaretakerConsole() {
       caretakerService.advanceTask(v.id, v.action),
     onSuccess: (r) => {
       toast.success(`${ACTION_LABEL[r.action]} — ${r.id}`, { description: "Live chain of custody updated." });
+      setHandoverTask(null);
       void qc.invalidateQueries({ queryKey: ["caretaker-tasks"] });
       void qc.invalidateQueries({ queryKey: ["caretaker-summary"] });
     },
@@ -150,8 +156,8 @@ function CaretakerConsole() {
         ) : (
           <Button
             size="sm"
-            className="h-8 text-xs font-semibold"
-            onClick={() => advance.mutate({ id: task.id, action: "handover" })}
+            className="h-8 text-xs font-semibold bg-primary hover:opacity-90 text-primary-foreground"
+            onClick={() => setHandoverTask(task)}
             disabled={advance.isPending}
           >
             Handover →
@@ -229,7 +235,10 @@ function CaretakerConsole() {
             <Section title="Service Pickups" description="Collect from resident → hand to provider at the gate">
               <ul className="space-y-3 p-3">
                 {pickups.length === 0 ? (
-                  <p className="text-xs text-muted-foreground py-6 text-center">No active service pickups</p>
+                  <div className="text-center py-8 text-muted-foreground text-xs">
+                    <CheckCircle2 className="size-8 mx-auto mb-2 text-emerald-500 opacity-60" />
+                    All service pickups completed!
+                  </div>
                 ) : (
                   pickups.map((t) => <TaskCard key={t.id} task={t} />)
                 )}
@@ -239,7 +248,10 @@ function CaretakerConsole() {
             <Section title="Service Returns" description="Receive from provider → deliver to flat → resident OTP">
               <ul className="space-y-3 p-3">
                 {returns.length === 0 ? (
-                  <p className="text-xs text-muted-foreground py-6 text-center">No pending returns</p>
+                  <div className="text-center py-8 text-muted-foreground text-xs">
+                    <CheckCircle2 className="size-8 mx-auto mb-2 text-emerald-500 opacity-60" />
+                    No pending service returns!
+                  </div>
                 ) : (
                   returns.map((t) => <TaskCard key={t.id} task={t} />)
                 )}
@@ -276,6 +288,78 @@ function CaretakerConsole() {
           </div>
         )}
       </div>
+
+      {/* Handover Confirmation Modal */}
+      {handoverTask && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4">
+          <div className="w-full max-w-md rounded-2xl border border-border bg-card shadow-2xl overflow-hidden animate-in fade-in-50 duration-200">
+            <div className="border-b border-border bg-primary/5 px-6 py-4 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="grid size-10 place-items-center rounded-xl bg-primary text-white font-bold">
+                  <ArrowRightLeft className="size-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-base text-foreground">Confirm Gate Handover</h3>
+                  <p className="text-xs text-muted-foreground">{handoverTask.id} · {handoverTask.title}</p>
+                </div>
+              </div>
+              <Button variant="ghost" size="sm" onClick={() => setHandoverTask(null)}>✕</Button>
+            </div>
+
+            <div className="space-y-4 p-6 text-xs">
+              <div className="grid grid-cols-2 gap-2.5 rounded-xl border border-border/60 bg-muted/20 p-3.5">
+                <div>
+                  <span className="text-[10px] uppercase font-semibold text-muted-foreground">Origin Flat</span>
+                  <p className="font-bold text-foreground mt-0.5">Flat {handoverTask.flatId}</p>
+                </div>
+                <div>
+                  <span className="text-[10px] uppercase font-semibold text-muted-foreground">Building</span>
+                  <p className="font-bold text-foreground mt-0.5">{handoverTask.buildingId}</p>
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="ho-gate" className="text-xs font-semibold">Handover Gate Location</Label>
+                <select
+                  id="ho-gate"
+                  value={handoverGate}
+                  onChange={(e) => setHandoverGate(e.target.value)}
+                  className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-xs font-medium"
+                >
+                  <option value="Gate 3 (Central North)">Gate 3 (Central North Checkpoint)</option>
+                  <option value="Gate 1 (Main Entrance)">Gate 1 (Main Entrance)</option>
+                  <option value="Gate 2 (East Commercial)">Gate 2 (East Commercial)</option>
+                  <option value="Gate 6 (Riverview)">Gate 6 (Riverview South)</option>
+                </select>
+              </div>
+
+              <div>
+                <Label htmlFor="ho-notes" className="text-xs font-semibold">Handover Condition / Notes</Label>
+                <Input
+                  id="ho-notes"
+                  value={handoverNotes}
+                  onChange={(e) => setHandoverNotes(e.target.value)}
+                  className="mt-1 text-xs"
+                />
+              </div>
+
+              <div className="flex gap-2 pt-2 border-t border-border">
+                <Button variant="outline" className="flex-1 text-xs" onClick={() => setHandoverTask(null)} disabled={advance.isPending}>
+                  Cancel
+                </Button>
+                <Button
+                  className="flex-1 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white"
+                  onClick={() => advance.mutate({ id: handoverTask.id, action: "handover" })}
+                  disabled={advance.isPending}
+                >
+                  {advance.isPending ? <Loader2 className="size-3.5 animate-spin mr-1.5" /> : null}
+                  Confirm & Complete Handover
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* QR Scanner Simulation Modal */}
       {scanningTask && (
