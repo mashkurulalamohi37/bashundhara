@@ -509,6 +509,10 @@ export const opsStore = {
     return request;
   },
 
+  addRequest(input: any) {
+    return opsStore.createRequest(input);
+  },
+
   setRequestStatus(requestId: string, status: RequestStatus, comment = "") {
     const prev = state.requests.find((r) => r.id === requestId);
     if (!prev) return;

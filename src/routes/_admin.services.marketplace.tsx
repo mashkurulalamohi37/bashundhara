@@ -54,27 +54,30 @@ function ServiceBookingModal({ provider, onClose }: ServiceBookingModalProps) {
       return;
     }
     setBusy(true);
-    await new Promise((r) => setTimeout(r, 600));
+    try {
+      await new Promise((r) => setTimeout(r, 400));
 
-    // Add to opsStore
-    const newReq = opsStore.addRequest({
-      type: "service",
-      title: `${provider.business} - ${provider.category} Service`,
-      description: notes || `Requested ${provider.services} from ${provider.business}. Location: ${flat}`,
-      priority: "normal",
-      requesterName: residentName,
-      requesterPhone: phone,
-      flatId: flat.split(",")[0]?.replace("Flat ", "") || "3B",
-      block: user?.block ?? "Block A",
-      assignedRole: "service_provider",
-      department: "Services",
-      slaMinutes: 60,
-    });
+      // Add to opsStore
+      const newReq = opsStore.createRequest({
+        type: "service",
+        title: `${provider.business} - ${provider.category} Service`,
+        description: notes || `Requested ${provider.services} from ${provider.business}. Location: ${flat}`,
+        priority: "normal",
+        requesterName: residentName,
+        flatId: flat.split(",")[0]?.replace("Flat ", "").trim() || "3B",
+        block: user?.block ?? "Block A",
+        providerName: provider.business,
+      });
 
-    setBusy(false);
-    toast.success(`Service request booked with ${provider.business}! Ticket: ${newReq.id}`);
-    onClose();
-    void navigate({ to: "/control/ops-board" });
+      toast.success(`Service request booked with ${provider.business}! Ticket: ${newReq.id}`);
+      onClose();
+      void navigate({ to: "/control/ops-board" });
+    } catch (err: any) {
+      console.error("Booking error:", err);
+      toast.error(err?.message || "Failed to book service request. Please try again.");
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
