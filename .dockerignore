@@ -1,0 +1,12 @@
+node_modules
+.output
+dist
+.git
+.gitignore
+.env*.local
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.DS_Store
+C:\Users\Lenovo\.gemini
