@@ -199,10 +199,29 @@ export const caretakerService = {
       returns: cdb.caretakerTasks.filter((t) => t.type === "service_return").length,
       urgent: cdb.caretakerTasks.filter((t) => t.priority === "urgent").length,
     }),
-  advanceTask: (id: string, action: "accept" | "collect" | "handover" | "deliver" | "complete") =>
-    request(`/caretaker-tasks/${id}/${action}`, { id, action, ok: true }, 350),
-  verifyOtp: (id: string, otp: string) =>
-    request(`/caretaker-tasks/${id}/otp`, { id, verified: otp.length === 6 }, 300),
+  advanceTask: (id: string, action: "accept" | "collect" | "handover" | "deliver" | "complete") => {
+    const task = cdb.caretakerTasks.find((t) => t.id === id);
+    if (task) {
+      if (action === "accept") {
+        task.status = "accepted" as any;
+      } else if (action === "collect" || action === "handover") {
+        task.status = "in_progress" as any;
+      } else if (action === "deliver" || action === "complete") {
+        task.status = "completed" as any;
+      }
+    }
+    return request(`/caretaker-tasks/${id}/${action}`, { id, action, ok: true }, 200);
+  },
+  verifyOtp: (id: string, otp: string) => {
+    const verified = otp.length === 6;
+    if (verified) {
+      const task = cdb.caretakerTasks.find((t) => t.id === id);
+      if (task) {
+        task.status = "completed" as any;
+      }
+    }
+    return request(`/caretaker-tasks/${id}/otp`, { id, verified }, 200);
+  },
 };
 
 export const accessControlService = {
